@@ -10,8 +10,6 @@ THREE.OBJLoader = ( function () {
 	var material_library_pattern = /^mtllib /;
 	// usemtl material_name
 	var material_use_pattern = /^usemtl /;
-	// usemap map_name
-	var map_use_pattern = /^usemap /;
 
 	function ParserState() {
 
@@ -24,7 +22,6 @@ THREE.OBJLoader = ( function () {
 			colors: [],
 			uvs: [],
 
-			materials: {},
 			materialLibraries: [],
 
 			startObject: function ( name, fromDeclaration ) {
@@ -219,15 +216,6 @@ THREE.OBJLoader = ( function () {
 
 			},
 
-			addVertexPoint: function ( a ) {
-
-				var src = this.vertices;
-				var dst = this.object.geometry.vertices;
-
-				dst.push( src[ a + 0 ], src[ a + 1 ], src[ a + 2 ] );
-
-			},
-
 			addVertexLine: function ( a ) {
 
 				var src = this.vertices;
@@ -289,23 +277,19 @@ THREE.OBJLoader = ( function () {
 
 				this.addVertex( ia, ib, ic );
 
-				if ( this.colors.length > 0 ) {
-
-					this.addColor( ia, ib, ic );
-
-				}
-
-				if ( ua !== undefined && ua !== '' ) {
+				if ( ua !== undefined ) {
 
 					var uvLen = this.uvs.length;
+
 					ia = this.parseUVIndex( ua, uvLen );
 					ib = this.parseUVIndex( ub, uvLen );
 					ic = this.parseUVIndex( uc, uvLen );
+
 					this.addUV( ia, ib, ic );
 
 				}
 
-				if ( na !== undefined && na !== '' ) {
+				if ( na !== undefined ) {
 
 					// Normals are many times the same. If so, skip function call and parseInt.
 					var nLen = this.normals.length;
@@ -318,17 +302,9 @@ THREE.OBJLoader = ( function () {
 
 				}
 
-			},
+				if ( this.colors.length > 0 ) {
 
-			addPointGeometry: function ( vertices ) {
-
-				this.object.geometry.type = 'Points';
-
-				var vLen = this.vertices.length;
-
-				for ( var vi = 0, l = vertices.length; vi < l; vi ++ ) {
-
-					this.addVertexPoint( this.parseVertexIndex( vertices[ vi ], vLen ) );
+					this.addColor( ia, ib, ic );
 
 				}
 
@@ -367,13 +343,13 @@ THREE.OBJLoader = ( function () {
 
 	function OBJLoader( manager ) {
 
-		THREE.Loader.call( this, manager );
+		this.manager = ( manager !== undefined ) ? manager : THREE.DefaultLoadingManager;
 
 		this.materials = null;
 
 	}
 
-	OBJLoader.prototype = Object.assign( Object.create( THREE.Loader.prototype ), {
+	OBJLoader.prototype = {
 
 		constructor: OBJLoader,
 
@@ -391,6 +367,12 @@ THREE.OBJLoader = ( function () {
 
 		},
 
+		setPath: function ( value ) {
+
+			this.path = value;
+
+		},
+
 		setMaterials: function ( materials ) {
 
 			this.materials = materials;
@@ -400,6 +382,8 @@ THREE.OBJLoader = ( function () {
 		},
 
 		parse: function ( text ) {
+
+			console.time( 'OBJLoader' );
 
 			var state = new ParserState();
 
@@ -452,7 +436,7 @@ THREE.OBJLoader = ( function () {
 								parseFloat( data[ 2 ] ),
 								parseFloat( data[ 3 ] )
 							);
-							if ( data.length >= 7 ) {
+							if ( data.length === 8 ) {
 
 								state.colors.push(
 									parseFloat( data[ 4 ] ),
@@ -540,13 +524,6 @@ THREE.OBJLoader = ( function () {
 					}
 					state.addLineGeometry( lineVertices, lineUVs );
 
-				} else if ( lineFirstChar === 'p' ) {
-
-					var lineData = line.substr( 1 ).trim();
-					var pointData = lineData.split( " " );
-
-					state.addPointGeometry( pointData );
-
 				} else if ( ( result = object_pattern.exec( line ) ) !== null ) {
 
 					// o object_name
@@ -570,13 +547,6 @@ THREE.OBJLoader = ( function () {
 					// mtl file
 
 					state.materialLibraries.push( line.substring( 7 ).trim() );
-
-				} else if ( map_use_pattern.test( line ) ) {
-
-					// the line is parsed but ignored since the loader assumes textures are defined MTL files
-					// (according to https://www.okino.com/conv/imp_wave.htm, 'usemap' is the old-style Wavefront texture reference method)
-
-					console.warn( 'THREE.OBJLoader: Rendering identifier "usemap" not supported. Textures must be defined in MTL files.' );
 
 				} else if ( lineFirstChar === 's' ) {
 
@@ -621,7 +591,7 @@ THREE.OBJLoader = ( function () {
 					// Handle null terminated files without exception
 					if ( line === '\0' ) continue;
 
-					console.warn( 'THREE.OBJLoader: Unexpected line: "' + line + '"' );
+					throw new Error( 'THREE.OBJLoader: Unexpected line: "' + line + '"' );
 
 				}
 
@@ -638,19 +608,17 @@ THREE.OBJLoader = ( function () {
 				var geometry = object.geometry;
 				var materials = object.materials;
 				var isLine = ( geometry.type === 'Line' );
-				var isPoints = ( geometry.type === 'Points' );
-				var hasVertexColors = false;
 
 				// Skip o/g line declarations that did not follow with any faces
 				if ( geometry.vertices.length === 0 ) continue;
 
 				var buffergeometry = new THREE.BufferGeometry();
 
-				buffergeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( geometry.vertices, 3 ) );
+				buffergeometry.addAttribute( 'position', new THREE.Float32BufferAttribute( geometry.vertices, 3 ) );
 
 				if ( geometry.normals.length > 0 ) {
 
-					buffergeometry.setAttribute( 'normal', new THREE.Float32BufferAttribute( geometry.normals, 3 ) );
+					buffergeometry.addAttribute( 'normal', new THREE.Float32BufferAttribute( geometry.normals, 3 ) );
 
 				} else {
 
@@ -660,14 +628,13 @@ THREE.OBJLoader = ( function () {
 
 				if ( geometry.colors.length > 0 ) {
 
-					hasVertexColors = true;
-					buffergeometry.setAttribute( 'color', new THREE.Float32BufferAttribute( geometry.colors, 3 ) );
+					buffergeometry.addAttribute( 'color', new THREE.Float32BufferAttribute( geometry.colors, 3 ) );
 
 				}
 
 				if ( geometry.uvs.length > 0 ) {
 
-					buffergeometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( geometry.uvs, 2 ) );
+					buffergeometry.addAttribute( 'uv', new THREE.Float32BufferAttribute( geometry.uvs, 2 ) );
 
 				}
 
@@ -678,8 +645,7 @@ THREE.OBJLoader = ( function () {
 				for ( var mi = 0, miLen = materials.length; mi < miLen; mi ++ ) {
 
 					var sourceMaterial = materials[ mi ];
-					var materialHash = sourceMaterial.name + '_' + sourceMaterial.smooth + '_' + hasVertexColors;
-					var material = state.materials[ materialHash ];
+					var material = undefined;
 
 					if ( this.materials !== null ) {
 
@@ -689,45 +655,22 @@ THREE.OBJLoader = ( function () {
 						if ( isLine && material && ! ( material instanceof THREE.LineBasicMaterial ) ) {
 
 							var materialLine = new THREE.LineBasicMaterial();
-							THREE.Material.prototype.copy.call( materialLine, material );
-							materialLine.color.copy( material.color );
+							materialLine.copy( material );
+							materialLine.lights = false; // TOFIX
 							material = materialLine;
 
-						} else if ( isPoints && material && ! ( material instanceof THREE.PointsMaterial ) ) {
-
-							var materialPoints = new THREE.PointsMaterial( { size: 10, sizeAttenuation: false } );
-							THREE.Material.prototype.copy.call( materialPoints, material );
-							materialPoints.color.copy( material.color );
-							materialPoints.map = material.map;
-							material = materialPoints;
-
 						}
 
 					}
 
-					if ( material === undefined ) {
+					if ( ! material ) {
 
-						if ( isLine ) {
-
-							material = new THREE.LineBasicMaterial();
-
-						} else if ( isPoints ) {
-
-							material = new THREE.PointsMaterial( { size: 1, sizeAttenuation: false } );
-
-						} else {
-
-							material = new THREE.MeshPhongMaterial();
-
-						}
-
+						material = ( ! isLine ? new THREE.MeshPhongMaterial() : new THREE.LineBasicMaterial() );
 						material.name = sourceMaterial.name;
-						material.flatShading = sourceMaterial.smooth ? false : true;
-						material.vertexColors = hasVertexColors;
-
-						state.materials[ materialHash ] = material;
 
 					}
+
+					material.flatShading = sourceMaterial.smooth ? false : true;
 
 					createdMaterials.push( material );
 
@@ -746,35 +689,11 @@ THREE.OBJLoader = ( function () {
 
 					}
 
-					if ( isLine ) {
-
-						mesh = new THREE.LineSegments( buffergeometry, createdMaterials );
-
-					} else if ( isPoints ) {
-
-						mesh = new THREE.Points( buffergeometry, createdMaterials );
-
-					} else {
-
-						mesh = new THREE.Mesh( buffergeometry, createdMaterials );
-
-					}
+					mesh = ( ! isLine ? new THREE.Mesh( buffergeometry, createdMaterials ) : new THREE.LineSegments( buffergeometry, createdMaterials ) );
 
 				} else {
 
-					if ( isLine ) {
-
-						mesh = new THREE.LineSegments( buffergeometry, createdMaterials[ 0 ] );
-
-					} else if ( isPoints ) {
-
-						mesh = new THREE.Points( buffergeometry, createdMaterials[ 0 ] );
-
-					} else {
-
-						mesh = new THREE.Mesh( buffergeometry, createdMaterials[ 0 ] );
-
-					}
+					mesh = ( ! isLine ? new THREE.Mesh( buffergeometry, createdMaterials[ 0 ] ) : new THREE.LineSegments( buffergeometry, createdMaterials[ 0 ] ) );
 
 				}
 
@@ -784,11 +703,13 @@ THREE.OBJLoader = ( function () {
 
 			}
 
+			console.timeEnd( 'OBJLoader' );
+
 			return container;
 
 		}
 
-	} );
+	};
 
 	return OBJLoader;
 
