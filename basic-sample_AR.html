@@ -106,6 +106,7 @@ limitations under the License.
 		<canvas id="snapshot" width="300" height="100"></canvas>
 			
 		<span id="viewer"></span>
+		<span id="results"></span>
 		<div id="info">
 			<span id="asset_name">Title</span><br/>
 			by <span id="asset_author">Author</span>
@@ -162,7 +163,6 @@ limitations under the License.
 			// POLY REST API
 			const API_KEY = 'AIzaSyBY3E_hJ9tt-ORN-pBkOhdQkd5NeUjIqzo';
 			function searchPoly( keywords, onLoad ) {
-				alert("serch_start!")
 				var url = `https://poly.googleapis.com/v1/assets?keywords=${keywords}&format=OBJ&key=${API_KEY}`;
 				var request = new XMLHttpRequest();
 				request.open( 'GET', url, true );
