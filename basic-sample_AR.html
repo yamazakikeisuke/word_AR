@@ -84,10 +84,10 @@ limitations under the License.
 						lang: 'eng'
 					})
 					.progress(function(p) {
-						$("#msg").text('準備中🐹 <' + p.status + ": " + (100 * p.progress).toFixed(1) + '%>')
+						$("#msg").text('ロード中... <' + p.status + ": " + (100 * p.progress).toFixed(1) + '%>')
 					})
 					.then(function(result) {
-						$("#msg").text('準備完了🐸')
+						$("#msg").text('ready!')
 					});
 			}());
 		</script>
@@ -115,9 +115,7 @@ limitations under the License.
 		<script src="third_party/OBJLoader.js"></script>
 		<script src="third_party/MTLLoader.js"></script>
 		<script>
-
 			// THREE.JS VIEWER
-
 			const WIDTH = viewer.offsetWidth;
 			const HEIGHT = viewer.offsetHeight;
 
@@ -161,26 +159,17 @@ limitations under the License.
 
 			requestAnimationFrame( animate );
 
-
 			// POLY REST API
-
 			const API_KEY = 'AIzaSyBY3E_hJ9tt-ORN-pBkOhdQkd5NeUjIqzo';
-
 			function searchPoly( keywords, onLoad ) {
-
 				var url = `https://poly.googleapis.com/v1/assets?keywords=${keywords}&format=OBJ&key=${API_KEY}`;
-
 				var request = new XMLHttpRequest();
 				request.open( 'GET', url, true );
 				request.addEventListener( 'load', function ( event ) {
-
 					onLoad( JSON.parse( event.target.response ) );
-
 				} );
 				request.send( null );
-
 			}
-
 			function createImage( asset ) {
 
 				var image = document.createElement( 'img' );
@@ -243,54 +232,32 @@ limitations under the License.
 					}
 
 				}
-
 				return image;
-
 			}
 
 			function onResults( data ) {
-
 				while ( results.childNodes.length ) {
-
 					results.removeChild( results.firstChild );
-
 				}
-
 				var assets = data.assets;
-
 				if ( assets ) {
-
 					for ( var i = 0; i < assets.length; i ++ ) {
-
 						var asset = assets[ i ];
-
 						var image = createImage( asset );
 						results.appendChild( image );
-
 					}
-
 				} else {
-
 					results.innerHTML = '<center>NO RESULTS</center>';
-
 				}
-
 			}
 
 			search.addEventListener( 'submit', function ( event ) {
-
 				event.preventDefault()
-
 				searchPoly( query.value, onResults );
-
 			} );
-
 			button.click();
-
 			if ( API_KEY.startsWith( '**' ) ) {
-
 				alert( 'Sample incorrectly set up. Please enter your API Key for the Poly API in the API_KEY variable.' );
-
 			}
 		</script>
 		<script>
@@ -338,6 +305,7 @@ limitations under the License.
 						$("#msg").text(p.status + ": " + p.progress)
 					})
 					.then(function(result) {
+						searchPoly( result.text, onResults );
 						alert(result.text)
 					});
 			});
