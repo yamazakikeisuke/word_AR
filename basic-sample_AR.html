@@ -242,11 +242,14 @@ limitations under the License.
 				}
 				var assets = data.assets;
 				if ( assets ) {
-					for ( var i = 0; i < assets.length; i ++ ) {
-						var asset = assets[ i ];
-						var image = createImage( asset );
-						results.appendChild( image );
-					}
+					//for ( var i = 0; i < assets.length; i ++ ) {
+					//	var asset = assets[ i ];
+					//	var image = createImage( asset );
+					//	results.appendChild( image );
+					//}
+					var asset = assets[ 0 ];
+					var image = createImage( asset );
+					results.appendChild( image );
 				} else {
 					results.innerHTML = '<center>NO RESULTS</center>';
 				}
