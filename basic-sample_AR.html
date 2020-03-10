@@ -162,6 +162,7 @@ limitations under the License.
 			// POLY REST API
 			const API_KEY = 'AIzaSyBY3E_hJ9tt-ORN-pBkOhdQkd5NeUjIqzo';
 			function searchPoly( keywords, onLoad ) {
+				alert("serch_start!")
 				var url = `https://poly.googleapis.com/v1/assets?keywords=${keywords}&format=OBJ&key=${API_KEY}`;
 				var request = new XMLHttpRequest();
 				request.open( 'GET', url, true );
@@ -305,7 +306,7 @@ limitations under the License.
 						$("#msg").text(p.status + ": " + p.progress)
 					})
 					.then(function(result) {
-						searchPoly( result.text, onResults );
+						this.searchPoly( result.text, onResults );
 						alert(result.text)
 					});
 			});
