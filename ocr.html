@@ -80,6 +80,7 @@
                         $("#msg").text(p.status + ": " + p.progress)
                     })
                     .then(function(result) {
+                        alert(result.text)
                         console.log(result)
                         $("#msg").text("Progress Complete")
                         var elem = document.createElement('div');
@@ -88,7 +89,6 @@
                         parent.insertBefore(elem, parent.firstChild);
                         var numdiv = document.getElementById(num);
                         var msg = document.createElement('div');
-                        alert(result.text)
                         msg.innerHTML = result.text;
                         numdiv.appendChild(msg);
                         num += 1;
