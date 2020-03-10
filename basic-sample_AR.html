@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<!--
+Copyright 2017 Google Inc. All rights reserved.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+   https://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<html lang="en">
+	<head>
+		<title></title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			html {
+				height: 100%;
+			}
+			body {
+				height: 100%;
+				font-family: sans-serif;
+				line-height: 24px;
+			}
+			#search {
+				position: absolute;
+				width: 100%;
+				height: 34px;
+				text-align: center;
+			}
+				#search * {
+					font-size: 18px;
+					text-transform: uppercase;
+				}
+			#results {
+				position: absolute;
+				top: 40px;
+				left: 8px;
+				width: 330px;
+				bottom: 0px;
+				vertical-align: top;
+			}
+			#results img {
+				margin-left: 8px;
+				cursor: pointer;
+			}
+				#results img:hover {
+					opacity: 0.8;
+				}
+			#viewer {
+				position: absolute;
+				top: 40px;
+				left: 340px;
+				right: 8px;
+				bottom: 72px;
+			}
+			#info {
+				position: absolute;
+				bottom: 10px;
+				left: 340px;
+				right: 0px;
+				padding-top: 6px;
+				text-align: center;
+			}
+			#asset_name {
+				font-size: 22px;
+				font-weight: bold;
+			}
+			#asset_author {
+				color: #888;
+			}
+		</style>	
+		<!-- meta name="apple-mobile-web-app-capable" content="yes" -->
+		<link rel="stylesheet" href="index.css" />
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="https://cdn.rawgit.com/naptha/tesseract.js/1.0.7/dist/tesseract.js"></script>
+		<script>
+			(function() {
+				Tesseract
+					.recognize("u.jpg", {
+						lang: 'eng'
+					})
+					.progress(function(p) {
+						$("#msg").text('準備中🐹 <' + p.status + ": " + (100 * p.progress).toFixed(1) + '%>')
+					})
+					.then(function(result) {
+						$("#msg").text('準備完了🐸')
+					});
+			}());
+		</script>
+	</head>
+	<body>
+		<div align="center">
+			<video id="player" controls autoplay playsinline></video>
+			<canvas id="canvas" width="300" height="100"></canvas>
+			<div class="button">
+				<button id="captureeng">Get AR!!!</button>
+			</div>
+			<div id="msg" align="center"></div>
+			<canvas id="snapshot" width="300" height="100"></canvas>
+			<br>
+			<script>
+				var video = document.getElementById("player"),
+					canvas = document.getElementById("canvas"),
+					ctx = canvas.getContext("2d");
+				requestAnimationFrame(draw);
+		
+				function draw() {
+					canvas.width = 300;
+					canvas.height = 100;
+					ctx.drawImage(video, 100, 300, 600, 200,
+						0, 0, 300, 100);
+					imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+					data = imgData.data;
+					for (let i = 0; i < data.length; i += 4) {
+						ave = (data[i + 0] + data[i + 1] + data[i + 2]) / 3;
+						data[i + 0] =
+							data[i + 1] =
+							data[i + 2] = (ave > 128) ? 255 : 0;
+						data[i + 3] = 255;
+					}
+					ctx.putImageData(imgData, 0, 0);
+					requestAnimationFrame(draw);
+				}
+				var snapshotCanvas = document.getElementById('snapshot');
+				var captureButton = document.getElementById('capture');
+				var captureButtoneng = document.getElementById('captureeng');
+				var snapshotButton = document.getElementById('snapshotbutton');
+				var handleSuccess = function(stream) {
+					video.srcObject = stream;
+				};
+				var num = 1;
+				
+				captureButtoneng.addEventListener('click', function() {
+					var context = snapshot.getContext('2d');
+					context.drawImage(video, 100, 300, 600, 200, 0, 0, snapshotCanvas.width,
+						snapshotCanvas.height);
+					const url = snapshot.toDataURL("image/png");
+					Tesseract
+						.recognize(url, {
+							lang: 'eng'
+						})
+						.progress(function(p) {
+							$("#msg").text(p.status + ": " + p.progress)
+						})
+						.then(function(result) {
+							alert(result.text)
+						});
+				});
+				var front = false;
+				var constraints = {
+					audio: false,
+					video: {
+						width: 1920,
+						height: 1080,
+						facingMode: (front ? "user" : "environment")
+					}
+				};
+				navigator.mediaDevices.getUserMedia(constraints).then(handleSuccess);
+			</script>
+		</div>
+		
+		<form id="search">
+			<input id="query" value="poly"></input>
+			<button id="button">search</button>
+		</form>
+		<span id="results"></span>
+		<span id="viewer"></span>
+		<div id="info">
+			<span id="asset_name">Title</span><br/>
+			by <span id="asset_author">Author</span>
+		</div>
+
+		<script src="third_party/three.min.js"></script>
+		<script src="third_party/OBJLoader.js"></script>
+		<script src="third_party/MTLLoader.js"></script>
+		<script>
+
+			// THREE.JS VIEWER
+
+			const WIDTH = viewer.offsetWidth;
+			const HEIGHT = viewer.offsetHeight;
+
+			var camera = new THREE.PerspectiveCamera( 60, WIDTH / HEIGHT, 0.01, 100 );
+			camera.position.set( 5, 3, 5 );
+			camera.lookAt( 0, 1.5, 0 );
+
+			var scene = new THREE.Scene();
+			scene.background = new THREE.Color( 0x222222 );
+
+			scene.add( new THREE.GridHelper( 10, 10 ) );
+
+			var ambient = new THREE.HemisphereLight( 0xbbbbff, 0x886666, 0.75 );
+			ambient.position.set( -0.5, 0.75, -1 );
+			scene.add( ambient );
+
+			var light = new THREE.DirectionalLight( 0xffffff, 0.75 );
+			light.position.set( 1, 0.75, 0.5 );
+			scene.add( light );
+
+			var container = new THREE.Group();
+			scene.add( container );
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setPixelRatio( window.devicePixelRatio );
+			renderer.setSize( WIDTH, HEIGHT );
+			viewer.appendChild( renderer.domElement );
+
+			function animate() {
+
+				var time = performance.now() / 5000;
+
+				camera.position.x = Math.sin( time ) * 5;
+				camera.position.z = Math.cos( time ) * 5;
+				camera.lookAt( 0, 1.5, 0 );
+
+				renderer.render( scene, camera );
+				requestAnimationFrame( animate );
+
+			}
+
+			requestAnimationFrame( animate );
+
+
+			// POLY REST API
+
+			const API_KEY = 'AIzaSyBY3E_hJ9tt-ORN-pBkOhdQkd5NeUjIqzo';
+
+			function searchPoly( keywords, onLoad ) {
+
+				var url = `https://poly.googleapis.com/v1/assets?keywords=${keywords}&format=OBJ&key=${API_KEY}`;
+
+				var request = new XMLHttpRequest();
+				request.open( 'GET', url, true );
+				request.addEventListener( 'load', function ( event ) {
+
+					onLoad( JSON.parse( event.target.response ) );
+
+				} );
+				request.send( null );
+
+			}
+
+			function createImage( asset ) {
+
+				var image = document.createElement( 'img' );
+				image.src = asset.thumbnail.url;
+				image.style.width = '100px';
+				image.style.height = '75px';
+
+				var format = asset.formats.find( format => { return format.formatType === 'OBJ'; } );
+
+				if ( format !== undefined ) {
+
+					image.onclick = function () {
+
+						// Remove previous results
+
+						while ( container.children.length ) {
+
+							container.remove( container.children[ 0 ] );
+
+						}
+
+						asset_name.textContent = asset.displayName;
+						asset_author.textContent = asset.authorName;
+
+						var obj = format.root;
+						var mtl = format.resources.find( resource => { return resource.url.endsWith( 'mtl' ) } );
+
+						var path = obj.url.slice( 0, obj.url.indexOf( obj.relativePath ) );
+
+						var loader = new THREE.MTLLoader();
+						loader.setCrossOrigin( true );
+						loader.setMaterialOptions( { ignoreZeroRGBs: true } );
+						loader.setTexturePath( path );
+						loader.load( mtl.url, function ( materials ) {
+
+							var loader = new THREE.OBJLoader();
+							loader.setMaterials( materials );
+							loader.load( obj.url, function ( object ) {
+
+								var box = new THREE.Box3();
+								box.setFromObject( object );
+
+								// re-center
+
+								var center = box.getCenter();
+								center.y = box.min.y;
+								object.position.sub( center );
+
+								// scale
+
+								var scaler = new THREE.Group();
+								scaler.add( object );
+								scaler.scale.setScalar( 6 / box.getSize().length() );
+								container.add( scaler );
+
+							} );
+
+						} );
+
+					}
+
+				}
+
+				return image;
+
+			}
+
+			function onResults( data ) {
+
+				while ( results.childNodes.length ) {
+
+					results.removeChild( results.firstChild );
+
+				}
+
+				var assets = data.assets;
+
+				if ( assets ) {
+
+					for ( var i = 0; i < assets.length; i ++ ) {
+
+						var asset = assets[ i ];
+
+						var image = createImage( asset );
+						results.appendChild( image );
+
+					}
+
+				} else {
+
+					results.innerHTML = '<center>NO RESULTS</center>';
+
+				}
+
+			}
+
+			search.addEventListener( 'submit', function ( event ) {
+
+				event.preventDefault()
+
+				searchPoly( query.value, onResults );
+
+			} );
+
+			button.click();
+
+			if ( API_KEY.startsWith( '**' ) ) {
+
+				alert( 'Sample incorrectly set up. Please enter your API Key for the Poly API in the API_KEY variable.' );
+
+			}
+		</script>
+	</body>
+</html>
