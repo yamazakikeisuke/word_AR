@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SKIPPING</title>
+
+<link rel="stylesheet" href="index.css" />
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="https://cdn.rawgit.com/naptha/tesseract.js/1.0.7/dist/tesseract.js"></script>
+
+<script>
+    (function() {
+        Tesseract
+            .recognize("u.jpg", {
+                lang: 'jpn'
+            })
+            .progress(function(p) {
+                $("#msg").text('準備中🐹 <' + p.status + ": " + (100 * p.progress).toFixed(1) + '%>')
+            })
+            .then(function(result) {
+                $("#msg").text('準備完了🐸')
+            });
+    }());
+</script>
+
+</head>
+<body style="margin:0px; overflow:hidden;">
+
+  <script src="https://aframe.io/releases/1.0.3/aframe.min.js"></script>
+  <script src="https://jeromeetienne.github.io/AR.js/aframe/build/aframe-ar.js"></script>
+
+  <div class="button">
+    <button id="captureeng">Get AR!!!</button>
+  </div>
+  <div id="msg"></div>
+  <canvas id="snapshot" width="300" height="100"></canvas>
+
+  <a-scene embedded arjs="debugUIEnabled:false;">
+
+  <a-assets>
+    <a-asset-item id="obj" src="model.obj"></a-asset-item>
+    <a-asset-item id="mtl" src="materials.mtl"></a-asset-item>
+  </a-assets>
+
+    <a-marker preset="hiro">
+
+      <a-obj-model
+        src="#obj"
+        mtl="#mtl"
+        scale="0.5 0.5 0.5"
+        position="0 0.5 0">
+        <a-animation
+          attribute="rotation"
+          to="0 360 0"
+          dur="3000"
+          easing="linear"
+          repeat="indefinite">
+        </a-animation>
+      </a-obj-model>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+
+  </a-scene>
+
+</body>
+</html>
